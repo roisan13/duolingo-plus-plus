@@ -1,4 +1,5 @@
-from rest_framework.decorators import api_view
+from rest_framework.parsers import MultiPartParser
+from rest_framework.decorators import api_view, parser_classes
 from rest_framework.response import Response
 from openai import OpenAI
 import os
@@ -111,6 +112,69 @@ def end_conversation(request):
         summary = response.choices[0].message.content.strip()
 
         return Response({"summary": summary})
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser])
+def voice_chat(request):
+    audio_file = request.FILES.get('audio')
+    language = request.data.get('language', 'English')
+    scenario = request.data.get('scenario', 'a general conversation')
+    session_id = request.data.get('session_id')
+
+    if not audio_file or not session_id:
+        return Response({"error": "Missing audio or session ID"}, status=400)
+
+    try:
+        # Transcribe audio with Whisper API
+        transcript = openai.Audio.transcribe("whisper-1", audio_file)['text']
+
+        # Step 2: Build context as before
+        if not chat_sessions[session_id]:
+            system_msg = (
+                f"You are a native speaker of {language} acting as a conversation partner "
+                f"in the following scenario: {scenario}. "
+                "Stay in character. Then, give language feedback on the user's message, including:\n"
+                "- Any grammar/spelling issues\n"
+                "- Better/more natural phrasing\n"
+                "- Vocabulary tips\n"
+                "Use this structure:\n"
+                "REPLY: <your in-character response>\n"
+                "FEEDBACK: <corrections and tips>"
+            )
+            chat_sessions[session_id].append({"role": "system", "content": system_msg})
+
+        # Add user transcript
+        chat_sessions[session_id].append({"role": "user", "content": transcript})
+
+        # Step 3: Get GPT response
+        response = client.chat.completions.create(
+            model="gpt-4-turbo",
+            messages=chat_sessions[session_id]
+        )
+        raw_reply = response.choices[0].message.content
+        chat_sessions[session_id].append({"role": "assistant", "content": raw_reply})
+
+        # Step 4: Save conversation
+        save_conversation(session_id, language, scenario, chat_sessions[session_id])
+
+        # Step 5: Parse
+        if "FEEDBACK:" in raw_reply:
+            reply_part, feedback_part = raw_reply.split("FEEDBACK:", 1)
+            reply_text = reply_part.replace("REPLY:", "").strip()
+            feedback_text = feedback_part.strip()
+        else:
+            reply_text = raw_reply
+            feedback_text = ""
+
+        return Response({
+            "transcript": transcript,
+            "reply": reply_text,
+            "feedback": feedback_text
+        })
 
     except Exception as e:
         return Response({"error": str(e)}, status=500)
