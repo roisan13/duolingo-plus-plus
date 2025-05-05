@@ -3,15 +3,18 @@ import React, { useState } from 'react';
 const Selector = ({ setLanguage, setScenario, onStart }) => {
   const [localLang, setLocalLang] = useState('');
   const [localScenario, setLocalScenario] = useState('');
+  const [chatMode, setChatMode] = useState('');
+
 
   const handleStart = () => {
-    if (!localLang || !localScenario) {
-      alert('Please select both language and scenario');
+    if (!localLang || !localScenario || !chatMode) {
+      alert('Please select language, scenario, and chat mode');
       return;
     }
     setLanguage(localLang);
     setScenario(localScenario);
-    onStart();
+    onStart(chatMode);
+    
   };
 
   return (
@@ -38,6 +41,16 @@ const Selector = ({ setLanguage, setScenario, onStart }) => {
           <option value="having a chat in a café">Chatting in a Café</option>
         </select>
       </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <label>Mode:</label><br />
+        <select value={chatMode} onChange={(e) => setChatMode(e.target.value)}>
+          <option value="">-- Choose Chat Mode --</option>
+          <option value="text">Text Chat</option>
+          <option value="voice">Voice Chat</option>
+        </select>
+      </div>
+
 
       <button onClick={handleStart}>Start Conversation</button>
     </div>
