@@ -130,7 +130,11 @@ def voice_chat(request):
 
     try:
         # Transcribe audio with Whisper API
-        transcript = openai.Audio.transcribe("whisper-1", audio_file)['text']
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        ).text
+
 
         # Step 2: Build context as before
         if not chat_sessions[session_id]:
