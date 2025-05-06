@@ -15,7 +15,9 @@ const VoiceChat = ({ sessionId, language, scenario }) => {
     };
 
     mediaRecorderRef.current.onstop = async () => {
-      const file = new File([blob], 'recording.wav', { type: 'audio/wav' });
+      const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+      const file = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
+
       const formData = new FormData();
 
       formData.append('audio', file);
