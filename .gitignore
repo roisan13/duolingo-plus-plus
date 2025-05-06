@@ -13,6 +13,17 @@ __pycache__/
 *.json
 firebase_key.json
 
+# Ignore media dir
+backend/media/
+
 
 # Ignore VS Code
 .vscode/
+
+# Ignore Node / React
+node_modules/
+frontend/node_modules/
+frontend/build/
+
+# Ignore OS files
+.DS_Store

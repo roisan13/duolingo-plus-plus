@@ -34,7 +34,8 @@ const VoiceChat = ({ sessionId, language, scenario }) => {
       setMessages(prev => [...prev, {
         transcript: data.transcript,
         reply: data.reply,
-        feedback: data.feedback
+        feedback: data.feedback,
+        audioUrl: data.audio_url
       }]);
 
       audioChunks.current = [];
@@ -58,13 +59,24 @@ const VoiceChat = ({ sessionId, language, scenario }) => {
       </button>
 
       <div style={{ marginTop: '2rem' }}>
-        {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: '1.5rem' }}>
-            <div><strong>Transcript:</strong> {msg.transcript}</div>
-            <div><strong>AI:</strong> {msg.reply}</div>
-            <div style={{ color: 'green' }}><strong>Feedback:</strong> {msg.feedback}</div>
+      {messages.map((msg, i) => (
+        <div key={i} style={{ marginBottom: '1.5rem' }}>
+          <div><strong>Transcript:</strong> {msg.transcript}</div>
+          <div>
+            <strong>AI:</strong> {msg.reply}
+            {msg.audioUrl && (
+              <button
+                onClick={() => new Audio(msg.audioUrl).play()}
+                style={{ marginLeft: '1rem' }}
+              >
+                🔊 Play Reply
+              </button>
+            )}
           </div>
-        ))}
+          <div style={{ color: 'green' }}><strong>Feedback:</strong> {msg.feedback}</div>
+        </div>
+      ))}
+
       </div>
     </div>
   );
