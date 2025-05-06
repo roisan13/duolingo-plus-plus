@@ -6,11 +6,18 @@ import os
 from dotenv import load_dotenv
 from collections import defaultdict
 from .firebase_utils import save_conversation
+from elevenlabs.client import ElevenLabs
+import uuid
+
+
 
 
 
 load_dotenv()
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+eleven_labs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
+
 
 # TEMPORARY in-memory store: { session_id: [message_dicts] }
 chat_sessions = defaultdict(list)
@@ -154,7 +161,7 @@ def voice_chat(request):
         # Add user transcript
         chat_sessions[session_id].append({"role": "user", "content": transcript})
 
-        # Step 3: Get GPT response
+        # Get GPT response
         response = client.chat.completions.create(
             model="gpt-4-turbo",
             messages=chat_sessions[session_id]
@@ -162,10 +169,10 @@ def voice_chat(request):
         raw_reply = response.choices[0].message.content
         chat_sessions[session_id].append({"role": "assistant", "content": raw_reply})
 
-        # Step 4: Save conversation
+        # Save conversation
         save_conversation(session_id, language, scenario, chat_sessions[session_id])
 
-        # Step 5: Parse
+        # Parse
         if "FEEDBACK:" in raw_reply:
             reply_part, feedback_part = raw_reply.split("FEEDBACK:", 1)
             reply_text = reply_part.replace("REPLY:", "").strip()
@@ -174,10 +181,33 @@ def voice_chat(request):
             reply_text = raw_reply
             feedback_text = ""
 
+
+        # Generate unique filename
+        unique_id = uuid.uuid4().hex[:8]
+        audio_filename = f"reply_{session_id}_{unique_id}.mp3"
+        audio_path = os.path.join("media", audio_filename)
+
+        # Ensure media directory exists
+        os.makedirs("media", exist_ok=True)
+
+        # Generate voice from ElevenLabs
+        audio = eleven_labs_client.text_to_speech.convert(
+            text=reply_text,
+            voice_id="JBFqnCBsd6RMkjVDRZzb",
+            model_id="eleven_multilingual_v2",
+            output_format="mp3_44100_128",
+        )
+        
+        # Save audo to path
+        with open(audio_path, "wb") as f:
+            f.write(b"".join(audio))
+
+
         return Response({
             "transcript": transcript,
             "reply": reply_text,
-            "feedback": feedback_text
+            "feedback": feedback_text,
+            "audio_url": f"http://localhost:8000/media/{audio_filename}"
         })
 
     except Exception as e:
