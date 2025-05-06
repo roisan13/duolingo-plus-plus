@@ -132,7 +132,7 @@ def voice_chat(request):
         # Transcribe audio with Whisper API
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
-            file=audio_file
+            file=(audio_file.name, audio_file.file, audio_file.content_type)
         ).text
 
 
