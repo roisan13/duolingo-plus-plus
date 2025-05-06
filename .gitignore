@@ -13,6 +13,9 @@ __pycache__/
 *.json
 firebase_key.json
 
+# Ignore media dir
+backend/media/
+
 
 # Ignore VS Code
 .vscode/
