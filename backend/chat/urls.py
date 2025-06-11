@@ -1,9 +1,11 @@
 from django.urls import path
-from .views import chat_with_ai, end_conversation, voice_chat
+from . import views
 
 urlpatterns = [
-    path('chat/', chat_with_ai),
-    path('end_conversation/', end_conversation),
-    path('voice_chat/', voice_chat),
+    path('initialize_session/', views.initialize_session, name='initialize_session'),
+    path('start_conversation/', views.start_conversation, name='start_conversation'),
+    path('chat/', views.chat_with_ai, name='chat_with_ai'),
+    path('voice_chat/', views.voice_chat, name='voice_chat'),
+    path('end_conversation/', views.end_conversation, name='end_conversation'),
 ]
 

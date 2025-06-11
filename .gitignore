@@ -10,7 +10,6 @@ __pycache__/
 .env
 
 # Ignore Firebase key
-*.json
 firebase_key.json
 
 # Ignore media dir

@@ -5,7 +5,7 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 from collections import defaultdict
-from .firebase_utils import save_conversation
+from .firebase_utils import save_conversation, create_session, create_conversation, end_conversation as mark_conversation_ended
 from elevenlabs.client import ElevenLabs
 import uuid
 
@@ -19,19 +19,39 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 eleven_labs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 
 
-# TEMPORARY in-memory store: { session_id: [message_dicts] }
-chat_sessions = defaultdict(list)
+# TEMPORARY in-memory store: { session_id: { conversation_id: [message_dicts] } }
+chat_sessions = defaultdict(lambda: defaultdict(list))
 
+
+@api_view(['POST'])
+def initialize_session(request):
+    """Create a new session and return its ID"""
+    session_id = create_session()
+    return Response({"session_id": session_id})
+
+@api_view(['POST'])
+def start_conversation(request):
+    """Start a new conversation within a session"""
+    session_id = request.data.get("session_id")
+    if not session_id:
+        return Response({"error": "No session_id provided"}, status=400)
+    
+    conversation_id = create_conversation(session_id)
+    return Response({
+        "session_id": session_id,
+        "conversation_id": conversation_id
+    })
 
 @api_view(['POST'])
 def chat_with_ai(request):
     user_msg = request.data.get("message", "")
     language = request.data.get("language", "English")
     scenario = request.data.get("scenario", "a general conversation")
-    session_id = request.data.get("session_id", "default")
+    session_id = request.data.get("session_id")
+    conversation_id = request.data.get("conversation_id")
 
-    if not user_msg:
-        return Response({"error": "No message provided."}, status=400)
+    if not all([user_msg, session_id, conversation_id]):
+        return Response({"error": "Missing required parameters"}, status=400)
 
     system_prompt = (
         f"You are a native speaker of {language} acting as a conversation partner "
@@ -46,27 +66,26 @@ def chat_with_ai(request):
         "FEEDBACK: <corrections and tips>"
     )
 
-    # If first message in session, add system prompt
-    if not chat_sessions[session_id]:
-        chat_sessions[session_id].append({"role": "system", "content": system_prompt})
+    # If first message in conversation, add system prompt
+    if not chat_sessions[session_id][conversation_id]:
+        chat_sessions[session_id][conversation_id].append({"role": "system", "content": system_prompt})
 
-    # Add user's message to session history
-    chat_sessions[session_id].append({"role": "user", "content": user_msg})
+    # Add user's message to conversation history
+    chat_sessions[session_id][conversation_id].append({"role": "user", "content": user_msg})
 
     try:
         response = client.chat.completions.create(
             model="gpt-4-turbo",
-            messages=chat_sessions[session_id]
+            messages=chat_sessions[session_id][conversation_id]
         )
 
         raw_reply = response.choices[0].message.content
 
         # Save assistant reply to history
-        chat_sessions[session_id].append({"role": "assistant", "content": raw_reply})
+        chat_sessions[session_id][conversation_id].append({"role": "assistant", "content": raw_reply})
 
         # Save to Firestore
-        save_conversation(session_id, language, scenario, chat_sessions[session_id])
-
+        save_conversation(session_id, conversation_id, language, scenario, chat_sessions[session_id][conversation_id])
 
         # Parse reply + feedback
         if "FEEDBACK:" in raw_reply:
@@ -80,7 +99,8 @@ def chat_with_ai(request):
         return Response({
             "reply": reply_text,
             "feedback": feedback_text,
-            "session_id": session_id  # return it so frontend can store it
+            "session_id": session_id,
+            "conversation_id": conversation_id
         })
 
     except Exception as e:
@@ -89,22 +109,41 @@ def chat_with_ai(request):
 
 @api_view(['POST'])
 def end_conversation(request):
-    session_id = request.data.get("session_id", "")
+    session_id = request.data.get("session_id")
+    conversation_id = request.data.get("conversation_id")
 
-    if not session_id or session_id not in chat_sessions:
-        return Response({"error": "Invalid session_id"}, status=400)
+    if not all([session_id, conversation_id]):
+        return Response({"error": "Missing session_id or conversation_id"}, status=400)
+
+    if session_id not in chat_sessions or conversation_id not in chat_sessions[session_id]:
+        return Response({"error": "Invalid session_id or conversation_id"}, status=400)
 
     # Get full message history
-    messages = chat_sessions[session_id]
+    messages = chat_sessions[session_id][conversation_id]
 
-    # Prompt GPT for final feedback
+    # Enhanced prompt for final feedback
     final_prompt = (
-        "Now that the conversation is over, analyze the learner's language use over the full length of the conversation.\n"
-        "Provide feedback on:\n"
-        "- Common grammar/spelling mistakes\n"
-        "- More natural phrasing alternatives\n"
-        "- A final tip to improve.\n\n"
-        "Return your feedback in paragraph form."
+        "Now that the conversation is over, provide a comprehensive analysis of the learner's language use. "
+        "Structure your feedback in the following sections:\n\n"
+        "1. Overall Progress:\n"
+        "- General assessment of the conversation\n"
+        "- Key strengths demonstrated\n"
+        "- Areas that need improvement\n\n"
+        "2. Grammar and Structure:\n"
+        "- Common grammar mistakes\n"
+        "- Sentence structure issues\n"
+        "- Suggestions for improvement\n\n"
+        "3. Vocabulary and Expression:\n"
+        "- Vocabulary usage and variety\n"
+        "- Natural expression and idiomatic usage\n"
+        "- Words/phrases that could be used instead\n\n"
+        "4. Pronunciation (if applicable):\n"
+        "- Notable pronunciation patterns\n"
+        "- Specific sounds or words to practice\n\n"
+        "5. Action Items:\n"
+        "- 3 specific things to practice\n"
+        "- Recommended next steps\n\n"
+        "Keep the feedback constructive and encouraging. Format it in clear paragraphs."
     )
 
     try:
@@ -117,6 +156,14 @@ def end_conversation(request):
         )
 
         summary = response.choices[0].message.content.strip()
+
+        # Mark conversation as ended in Firestore
+        mark_conversation_ended(session_id, conversation_id)
+
+        # Clean up in-memory storage
+        del chat_sessions[session_id][conversation_id]
+        if not chat_sessions[session_id]:
+            del chat_sessions[session_id]
 
         return Response({"summary": summary})
 
@@ -131,9 +178,10 @@ def voice_chat(request):
     language = request.data.get('language', 'English')
     scenario = request.data.get('scenario', 'a general conversation')
     session_id = request.data.get('session_id')
+    conversation_id = request.data.get('conversation_id')
 
-    if not audio_file or not session_id:
-        return Response({"error": "Missing audio or session ID"}, status=400)
+    if not all([audio_file, session_id, conversation_id]):
+        return Response({"error": "Missing required parameters"}, status=400)
 
     try:
         # Transcribe audio with Whisper API
@@ -142,9 +190,8 @@ def voice_chat(request):
             file=(audio_file.name, audio_file.file, audio_file.content_type)
         ).text
 
-
         # Step 2: Build context as before
-        if not chat_sessions[session_id]:
+        if not chat_sessions[session_id][conversation_id]:
             system_msg = (
                 f"You are a native speaker of {language} acting as a conversation partner "
                 f"in the following scenario: {scenario}. "
@@ -156,21 +203,21 @@ def voice_chat(request):
                 "REPLY: <your in-character response>\n"
                 "FEEDBACK: <corrections and tips>"
             )
-            chat_sessions[session_id].append({"role": "system", "content": system_msg})
+            chat_sessions[session_id][conversation_id].append({"role": "system", "content": system_msg})
 
         # Add user transcript
-        chat_sessions[session_id].append({"role": "user", "content": transcript})
+        chat_sessions[session_id][conversation_id].append({"role": "user", "content": transcript})
 
         # Get GPT response
         response = client.chat.completions.create(
             model="gpt-4-turbo",
-            messages=chat_sessions[session_id]
+            messages=chat_sessions[session_id][conversation_id]
         )
         raw_reply = response.choices[0].message.content
-        chat_sessions[session_id].append({"role": "assistant", "content": raw_reply})
+        chat_sessions[session_id][conversation_id].append({"role": "assistant", "content": raw_reply})
 
         # Save conversation
-        save_conversation(session_id, language, scenario, chat_sessions[session_id])
+        save_conversation(session_id, conversation_id, language, scenario, chat_sessions[session_id][conversation_id])
 
         # Parse
         if "FEEDBACK:" in raw_reply:
@@ -181,10 +228,9 @@ def voice_chat(request):
             reply_text = raw_reply
             feedback_text = ""
 
-
         # Generate unique filename
         unique_id = uuid.uuid4().hex[:8]
-        audio_filename = f"reply_{session_id}_{unique_id}.mp3"
+        audio_filename = f"reply_{session_id}_{conversation_id}_{unique_id}.mp3"
         audio_path = os.path.join("media", audio_filename)
 
         # Ensure media directory exists
@@ -198,16 +244,17 @@ def voice_chat(request):
             output_format="mp3_44100_128",
         )
         
-        # Save audo to path
+        # Save audio to path
         with open(audio_path, "wb") as f:
             f.write(b"".join(audio))
-
 
         return Response({
             "transcript": transcript,
             "reply": reply_text,
             "feedback": feedback_text,
-            "audio_url": f"http://localhost:8000/media/{audio_filename}"
+            "audio_url": f"http://localhost:8000/media/{audio_filename}",
+            "session_id": session_id,
+            "conversation_id": conversation_id
         })
 
     except Exception as e:
