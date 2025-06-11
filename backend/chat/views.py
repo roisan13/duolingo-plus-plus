@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from collections import defaultdict
 from .firebase_utils import save_conversation, create_session, create_conversation, end_conversation as mark_conversation_ended
+from .ml_utils import VocabularyAnalyzer
 from elevenlabs.client import ElevenLabs
 import uuid
 
@@ -17,6 +18,7 @@ load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 eleven_labs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
+vocab_analyzer = VocabularyAnalyzer()
 
 
 # TEMPORARY in-memory store: { session_id: { conversation_id: [message_dicts] } }
@@ -256,6 +258,36 @@ def voice_chat(request):
             "session_id": session_id,
             "conversation_id": conversation_id
         })
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def analyze_vocabulary(request):
+    """Analyze vocabulary usage in a session and provide recommendations"""
+    session_id = request.query_params.get("session_id")
+    language = request.query_params.get("language", "en")
+
+    if not session_id:
+        return Response({"error": "Missing session_id"}, status=400)
+
+    try:
+        # Get all conversations from the session
+        conversations_ref = db.collection("sessions").document(session_id).collection("conversations")
+        conversations = conversations_ref.stream()
+        
+        # Collect all messages from all conversations
+        all_messages = []
+        for conv in conversations:
+            conv_data = conv.to_dict()
+            if 'messages' in conv_data:
+                all_messages.extend(conv_data['messages'])
+        
+        # Analyze vocabulary
+        analysis = vocab_analyzer.analyze_session(all_messages, language)
+        
+        return Response(analysis)
 
     except Exception as e:
         return Response({"error": str(e)}, status=500)

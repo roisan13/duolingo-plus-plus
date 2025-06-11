@@ -7,5 +7,6 @@ urlpatterns = [
     path('chat/', views.chat_with_ai, name='chat_with_ai'),
     path('voice_chat/', views.voice_chat, name='voice_chat'),
     path('end_conversation/', views.end_conversation, name='end_conversation'),
+    path('analyze_vocabulary/', views.analyze_vocabulary, name='analyze_vocabulary'),
 ]
 
