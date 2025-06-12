@@ -31,7 +31,7 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
 
     try {
       const response = await sendMessage(sessionId, conversationId, input, language, scenario);
-      
+
       // Add AI's reply
       const assistantMessage = {
         role: 'assistant',
@@ -102,7 +102,7 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
               maxWidth: '70%',
               padding: '0.75rem 1rem',
               borderRadius: '1rem',
-              backgroundColor: message.role === 'user' ? '#007bff' : 
+              backgroundColor: message.role === 'user' ? '#007bff' :
                              message.role === 'system' ? '#f8f9fa' : '#e9ecef',
               color: message.role === 'user' ? 'white' : 'black',
               boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
@@ -112,6 +112,26 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
             {message.content}
           </div>
         ))}
+
+        {isLoading && (
+          <div
+            style={{
+            alignSelf: 'flex-start',
+            maxWidth: '70%',
+            padding: '0.75rem 1rem',
+            borderRadius: '1rem',
+            backgroundColor: '#e9ecef',
+            color: 'gray',
+            fontStyle: 'italic',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+          }}
+          >
+            Thinking...
+          </div>
+          )}
+
+
+
         <div ref={messagesEndRef} />
       </div>
 
