@@ -1,229 +1,204 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { endConversation } from '../services/chatService';
 
-const VoiceChat = ({ language, scenario }) => {
-  const [recording, setRecording] = useState(false);
+const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
   const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [summary, setSummary] = useState('');
-  const [conversationEnded, setConversationEnded] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
-  const [conversationId, setConversationId] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const mediaRecorderRef = useRef(null);
-  const audioChunks = useRef([]);
+  const audioChunksRef = useRef([]);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    // Initialize session when component mounts
-    const initializeSession = async () => {
-      try {
-        const res = await fetch('http://localhost:8000/initialize_session/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        const data = await res.json();
-        setSessionId(data.session_id);
-        
-        // Start a new conversation
-        const convRes = await fetch('http://localhost:8000/start_conversation/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ session_id: data.session_id }),
-        });
-        const convData = await convRes.json();
-        setConversationId(convData.conversation_id);
-      } catch (err) {
-        console.error('Error initializing session:', err);
-        alert('Failed to initialize session.');
-      }
-    };
-
-    initializeSession();
-  }, []);
+    scrollToBottom();
+  }, [messages]);
 
   const startRecording = async () => {
-    if (!sessionId || !conversationId) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorderRef.current = new MediaRecorder(stream);
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
 
-    mediaRecorderRef.current.ondataavailable = (e) => {
-      audioChunks.current.push(e.data);
-    };
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        await handleAudioSubmission(audioBlob);
+      };
 
-    mediaRecorderRef.current.onstop = async () => {
-      setLoading(true);
-      const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-      const file = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
-
-      const formData = new FormData();
-      formData.append('audio', file);
-      formData.append('language', language);
-      formData.append('scenario', scenario);
-      formData.append('session_id', sessionId);
-      formData.append('conversation_id', conversationId);
-
-      try {
-        const res = await fetch('http://localhost:8000/voice_chat/', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const data = await res.json();
-        setMessages(prev => [...prev, {
-          transcript: data.transcript,
-          reply: data.reply,
-          feedback: data.feedback,
-          audioUrl: data.audio_url
-        }]);
-      } catch (err) {
-        console.error('Error:', err);
-        alert('Failed to process voice message.');
-      } finally {
-        setLoading(false);
-        audioChunks.current = [];
-      }
-    };
-
-    mediaRecorderRef.current.start();
-    setRecording(true);
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      alert('Could not access microphone. Please check permissions.');
+    }
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current.stop();
-    setRecording(false);
-  };
-
-  const finishConversation = async () => {
-    if (!sessionId || !conversationId) return;
-    
-    setLoading(true);
-    try {
-      const res = await fetch('http://localhost:8000/end_conversation/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          session_id: sessionId,
-          conversation_id: conversationId 
-        }),
-      });
-  
-      const data = await res.json();
-      setSummary(data.summary);
-      setConversationEnded(true);
-    } catch (err) {
-      console.error('Error ending conversation:', err);
-      alert('Failed to end conversation.');
-    } finally {
-      setLoading(false);
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
     }
   };
 
-  const startNewConversation = async () => {
-    if (!sessionId) return;
-    
+  const handleAudioSubmission = async (audioBlob) => {
+    setIsLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/start_conversation/', {
+      const formData = new FormData();
+      formData.append('audio', audioBlob);
+      formData.append('session_id', sessionId);
+      formData.append('conversation_id', conversationId);
+      formData.append('language', language);
+      formData.append('scenario', scenario);
+
+      const response = await fetch('http://localhost:8000/voice_chat/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ session_id: sessionId }),
+        body: formData,
       });
+
+      const data = await response.json();
       
-      const data = await res.json();
-      setConversationId(data.conversation_id);
-      setMessages([]);
-      setSummary('');
-      setConversationEnded(false);
-    } catch (err) {
-      console.error('Error starting new conversation:', err);
-      alert('Failed to start new conversation.');
+      // Add user's transcribed message
+      setMessages(prev => [...prev, {
+        role: 'user',
+        content: data.transcript,
+        timestamp: new Date().toISOString()
+      }]);
+
+      // Add AI's reply
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: data.reply,
+        timestamp: new Date().toISOString()
+      }]);
+
+      // Add feedback if available
+      if (data.feedback) {
+        setMessages(prev => [...prev, {
+          role: 'system',
+          content: data.feedback,
+          timestamp: new Date().toISOString()
+        }]);
+      }
+
+      // Play audio response if available
+      if (data.audio_url) {
+        const audio = new Audio(data.audio_url);
+        audio.play();
+      }
+
+    } catch (error) {
+      console.error('Error processing audio:', error);
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: 'Error processing audio. Please try again.',
+        timestamp: new Date().toISOString()
+      }]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (!sessionId || !conversationId) {
-    return <div>Initializing...</div>;
-  }
+  const handleEndConversation = async () => {
+    try {
+      const response = await endConversation(sessionId, conversationId);
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: response.summary || 'Conversation ended. You can start a new one when ready.',
+        timestamp: new Date().toISOString()
+      }]);
+    } catch (error) {
+      console.error('Error ending conversation:', error);
+    }
+  };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>🎤 Voice Chat — {language} ({scenario})</h2>
-
-      <div style={{ marginBottom: '1rem' }}>
-        <button 
-          onClick={recording ? stopRecording : startRecording}
-          disabled={loading || conversationEnded}
-        >
-          {recording ? 'Stop' : 'Start Recording'}
-        </button>
-
-        <div style={{ marginTop: '1rem' }}>
-          {!conversationEnded ? (
-            <button onClick={finishConversation} disabled={loading}>
-              Finish Conversation
-            </button>
-          ) : (
-            <button onClick={startNewConversation} disabled={loading}>
-              Start New Conversation
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div style={{ marginTop: '2rem' }}>
-        {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: '1.5rem' }}>
-            <div><strong>Transcript:</strong> {msg.transcript}</div>
-            <div>
-              <strong>AI:</strong> {msg.reply}
-              {msg.audioUrl && (
-                <button
-                  onClick={() => new Audio(msg.audioUrl).play()}
-                  style={{ marginLeft: '1rem' }}
-                >
-                  🔊 Play Reply
-                </button>
-              )}
-            </div>
-            <div style={{ color: 'green' }}><strong>Feedback:</strong> {msg.feedback}</div>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      backgroundColor: 'white',
+      borderRadius: '8px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    }}>
+      {/* Messages Area */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            style={{
+              alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start',
+              maxWidth: '70%',
+              padding: '0.75rem 1rem',
+              borderRadius: '1rem',
+              backgroundColor: message.role === 'user' ? '#007bff' : 
+                             message.role === 'system' ? '#f8f9fa' : '#e9ecef',
+              color: message.role === 'user' ? 'white' : 'black',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+              border: message.role === 'system' ? '1px solid #dee2e6' : 'none'
+            }}
+          >
+            {message.content}
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
-      {summary && (
-        <div style={{ marginTop: '2rem', padding: '1.5rem', border: '1px solid #ccc', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-          <h3 style={{ color: '#2c3e50', marginBottom: '1rem', borderBottom: '2px solid #3498db', paddingBottom: '0.5rem' }}>
-            Final Feedback
-          </h3>
-          <div style={{ 
-            whiteSpace: 'pre-line',
-            lineHeight: '1.6',
-            color: '#34495e'
-          }}>
-            {summary}
-          </div>
-          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #ddd' }}>
-            <button 
-              onClick={startNewConversation}
-              style={{
-                backgroundColor: '#3498db',
-                color: 'white',
-                border: 'none',
-                padding: '0.5rem 1rem',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Start New Conversation
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Controls Area */}
+      <div style={{
+        padding: '1rem',
+        borderTop: '1px solid #dee2e6',
+        display: 'flex',
+        gap: '0.5rem',
+        justifyContent: 'center'
+      }}>
+        <button
+          onClick={isRecording ? stopRecording : startRecording}
+          disabled={isLoading}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: isRecording ? '#dc3545' : '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          {isRecording ? 'Stop Recording' : 'Start Recording'}
+        </button>
+        <button
+          onClick={handleEndConversation}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: '#dc3545',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '1rem'
+          }}
+        >
+          End Chat
+        </button>
+      </div>
     </div>
   );
 };

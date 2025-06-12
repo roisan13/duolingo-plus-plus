@@ -5,10 +5,12 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 from collections import defaultdict
-from .firebase_utils import save_conversation, create_session, create_conversation, end_conversation as mark_conversation_ended
+from .firebase_utils import save_conversation, create_session, create_conversation, get_session_messages, end_conversation as mark_conversation_ended
+from .firebase_utils import db
 from .ml_utils import VocabularyAnalyzer
 from elevenlabs.client import ElevenLabs
 import uuid
+from .vocabulary_analyzer import VocabularyAnalyzer
 
 
 
@@ -265,30 +267,25 @@ def voice_chat(request):
 
 @api_view(['GET'])
 def analyze_vocabulary(request):
-    """Analyze vocabulary usage in a session and provide recommendations"""
-    session_id = request.query_params.get("session_id")
-    language = request.query_params.get("language", "en")
-
+    """Analyze vocabulary from a session and provide recommendations"""
+    session_id = request.GET.get('session_id')
+    language = request.GET.get('language', 'english')
+    
     if not session_id:
-        return Response({"error": "Missing session_id"}, status=400)
-
+        return Response({'error': 'Session ID is required'}, status=400)
+    
     try:
-        # Get all conversations from the session
-        conversations_ref = db.collection("sessions").document(session_id).collection("conversations")
-        conversations = conversations_ref.stream()
+        # Get all messages from the session
+        all_messages = get_session_messages(session_id)
         
-        # Collect all messages from all conversations
-        all_messages = []
-        for conv in conversations:
-            conv_data = conv.to_dict()
-            if 'messages' in conv_data:
-                all_messages.extend(conv_data['messages'])
+        if not all_messages:
+            return Response({'error': 'No messages found in session'}, status=404)
         
         # Analyze vocabulary
-        analysis = vocab_analyzer.analyze_session(all_messages, language)
+        analysis = vocab_analyzer.analyze_vocabulary(all_messages, language)
         
         return Response(analysis)
-
+        
     except Exception as e:
-        return Response({"error": str(e)}, status=500)
+        return Response({'error': str(e)}, status=500)
 

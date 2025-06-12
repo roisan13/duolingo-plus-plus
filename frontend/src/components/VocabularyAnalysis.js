@@ -1,118 +1,194 @@
 import React, { useState, useEffect } from 'react';
 
-const VocabularyAnalysis = ({ sessionId, language, onBack }) => {
-  const [analysis, setAnalysis] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const VocabularyAnalysis = ({ sessionId, onBack }) => {
+    const [analysis, setAnalysis] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [selectedLanguage, setSelectedLanguage] = useState(null);
 
-  useEffect(() => {
-    const fetchAnalysis = async () => {
-      try {
-        const res = await fetch(`http://localhost:8000/analyze_vocabulary/?session_id=${sessionId}&language=${language}`);
-        const data = await res.json();
-        setAnalysis(data);
-      } catch (err) {
-        console.error('Error fetching vocabulary analysis:', err);
-        setError('Failed to load vocabulary analysis');
-      } finally {
-        setLoading(false);
-      }
+    const languages = [
+        { id: 'french', name: 'French' },
+        { id: 'spanish', name: 'Spanish' },
+        { id: 'german', name: 'German' },
+        { id: 'italian', name: 'Italian' }
+    ];
+
+    const fetchAnalysis = async (language) => {
+        if (!sessionId || !language) return;
+        
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Here I'm still somehow getting Two identical requests at the same time but still no idea why
+            const response = await fetch(`http://localhost:8000/analyze_vocabulary?session_id=${sessionId}&language=${language}`);
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to analyze vocabulary');
+            }
+            
+            // Parse the recommendations JSON string
+            let parsedRecommendations;
+            try {
+                parsedRecommendations = JSON.parse(data.recommendations);
+            } catch (parseError) {
+                console.error('Failed to parse recommendations:', parseError);
+                console.error('Raw recommendations string:', data.recommendations);
+                throw new Error('Failed to parse vocabulary recommendations');
+            }
+            
+            const parsedData = {
+                ...data,
+                recommendations: parsedRecommendations
+            };
+            
+            setAnalysis(parsedData);
+        } catch (err) {
+            console.error('Error in fetchAnalysis:', err);
+            setError(err.message || 'Failed to analyze vocabulary');
+            setAnalysis(null);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    if (sessionId) {
-      fetchAnalysis();
-    }
-  }, [sessionId, language]);
+    const handleLanguageSelect = (language) => {
+        setSelectedLanguage(language);
+        fetchAnalysis(language);
+    };
 
-  if (loading) {
-    return <div>Loading vocabulary analysis...</div>;
-  }
-
-  if (error) {
-    return <div style={{ color: 'red' }}>{error}</div>;
-  }
-
-  if (!analysis) {
-    return <div>No vocabulary data available</div>;
-  }
-
-  return (
-    <div style={{ padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h2>Vocabulary Analysis</h2>
-        <button 
-          onClick={onBack}
-          style={{
-            backgroundColor: '#3498db',
-            color: 'white',
-            border: 'none',
-            padding: '0.5rem 1rem',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Back to Chat
-        </button>
-      </div>
-
-      <div style={{ marginBottom: '2rem' }}>
-        <h3>Most Used Words</h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-          {analysis.top_words.map(([word, count]) => (
-            <div 
-              key={word}
-              style={{
-                backgroundColor: '#f0f0f0',
-                padding: '0.5rem 1rem',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              <span style={{ fontWeight: 'bold' }}>{word}</span>
-              <span style={{ color: '#666' }}>({count} times)</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3>Vocabulary Recommendations</h3>
-        {Object.entries(analysis.recommendations).map(([word, data]) => (
-          <div 
-            key={word}
-            style={{
-              marginBottom: '1.5rem',
-              padding: '1rem',
-              backgroundColor: '#f9f9f9',
-              borderRadius: '8px',
-              border: '1px solid #ddd'
-            }}
-          >
-            <h4 style={{ marginBottom: '0.5rem' }}>
-              Instead of "{word}" ({data.count} times), try:
-            </h4>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-              {data.similar_words.map(([similar, score]) => (
-                <div
-                  key={similar}
-                  style={{
-                    backgroundColor: '#e3f2fd',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '4px',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  {similar}
+    if (!selectedLanguage) {
+        return (
+            <div className="min-h-screen bg-gray-100 p-8">
+                <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-8">Select Language for Analysis</h1>
+                    <div className="grid grid-cols-2 gap-4">
+                        {languages.map((lang) => (
+                            <button
+                                key={lang.id}
+                                onClick={() => handleLanguageSelect(lang.id)}
+                                className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 text-xl font-semibold text-gray-800"
+                            >
+                                {lang.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-              ))}
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+        );
+    }
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-100">
+                <div className="text-xl text-gray-600">Analyzing your vocabulary...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gray-100 p-8">
+                <div className="max-w-4xl mx-auto">
+                    <div className="flex justify-between items-center mb-8">
+                        <h1 className="text-3xl font-bold text-gray-900">Vocabulary Analysis</h1>
+                        <button
+                            onClick={onBack}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                        >
+                            Back to Menu
+                        </button>
+                    </div>
+                    <div className="text-xl text-red-600">{error}</div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!analysis) {
+        return (
+            <div className="min-h-screen bg-gray-100 p-8">
+                <div className="max-w-4xl mx-auto">
+                    <div className="flex justify-between items-center mb-8">
+                        <h1 className="text-3xl font-bold text-gray-900">Vocabulary Analysis</h1>
+                        <button
+                            onClick={onBack}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                        >
+                            Back to Menu
+                        </button>
+                    </div>
+                    <div className="text-xl text-gray-600">No vocabulary analysis available</div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-100 p-8">
+            <div className="max-w-4xl mx-auto">
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900">Vocabulary Analysis</h1>
+                    <button
+                        onClick={onBack}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                    >
+                        Back to Menu
+                    </button>
+                </div>
+                
+                {/* Most Used Words */}
+                <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Most Used Words</h2>
+                    <div className="flex flex-wrap gap-3">
+                        {analysis.top_words && analysis.top_words.map((word, index) => (
+                            <span key={index} className="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-lg">
+                                {word}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Recommendations */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Word Recommendations</h2>
+                    <div className="space-y-8">
+                        {analysis.recommendations && analysis.recommendations.map((rec) => (
+                            <div key={rec.word} className="border-b border-gray-200 pb-8 last:border-b-0">
+                                <h3 className="text-2xl font-medium text-gray-900 mb-4">{rec.word}</h3>
+                                <div className="space-y-4">
+                                    {rec.synonyms && (
+                                        <div>
+                                            <span className="text-sm font-medium text-gray-500">Synonyms: </span>
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                {rec.synonyms.map((synonym, index) => (
+                                                    <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full">
+                                                        {synonym}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {rec.description && (
+                                        <div>
+                                            <span className="text-sm font-medium text-gray-500">Description: </span>
+                                            <p className="mt-2 text-gray-700">{rec.description}</p>
+                                        </div>
+                                    )}
+                                    {rec.example && (
+                                        <div>
+                                            <span className="text-sm font-medium text-gray-500">Example: </span>
+                                            <p className="mt-2 text-gray-700 italic">{rec.example}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default VocabularyAnalysis; 
