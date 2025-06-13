@@ -11,8 +11,8 @@ Această aplicație web va folosi AI pentru a îmbunătăți învățarea limbil
 ## Tehnologii posibile:
 
 ### Frontend:
-- **React.js** / **Vue.js** - pentru construirea interfeței interactive a utilizatorului.
-- **Redux** - pentru gestionarea stării aplicației.
+- **React.js** - pentru construirea interfeței interactive a utilizatorului.
+[//]: # - **Redux** - pentru gestionarea stării aplicației.
 
 ### Backend:
 - **Node.js** / **Python (Flask/Django)** - pentru logica server-side.
