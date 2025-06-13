@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-9p!unqu77b6fu37mjp6#o#7sa6o$e2sk$n@&cqm3l$=4x+d&%*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["duolingo-plus-plus.onrender.com", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["duo-plus-plus-backend.onrender.com", "localhost", "127.0.0.1"]
 
 
 # Application definition
