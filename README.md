@@ -11,11 +11,9 @@ Această aplicație web folosește în mod inteligent LLM-urile pentru a îmbun�
 
 ### Frontend:
 - **React.js** - pentru construirea interfeței interactive a utilizatorului.
-[//]: # - **Redux** - pentru gestionarea stării aplicației.
 
 ### Backend:
 - **Python (Flask/Django)** - pentru logica server-side.
-[//]: # - **Express.js** - pentru gestionarea rutelor API.
 
 ### Speech-to-Text & Text-to-Speech:
 - **Whisper API** (OpenAI) sau pentru transcrierea audio.
