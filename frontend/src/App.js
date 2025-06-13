@@ -12,33 +12,32 @@ function App() {
   const [conversationId, setConversationId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const initializeChat = async () => {
+    try {
+      // Initialize session
+      const res = await fetch(`${API_BASE_URL}/initialize_session/`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      setSessionId(data.session_id);
+
+      const convRes = await fetch(`${API_BASE_URL}/start_conversation/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_id: data.session_id }),
+      });
+      const convData = await convRes.json();
+      setConversationId(convData.conversation_id);
+    } catch (error) {
+      console.error('Error initializing chat:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const initializeChat = async () => {
-      try {
-        // Initialize session
-        const res = await fetch(`${API_BASE_URL}/initialize_session/`, {
-          method: 'POST',
-        });
-        const data = await res.json();
-        setSessionId(data.session_id);
-
-        // Start conversation
-        const convRes = await fetch(`${API_BASE_URL}/start_conversation/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ session_id: data.session_id }),
-        });
-        const convData = await convRes.json();
-        setConversationId(convData.conversation_id);
-      } catch (error) {
-        console.error('Error initializing chat:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     initializeChat();
   }, []);
 
