@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { endConversation } from '../services/chatService';
+import { API_BASE_URL } from '../config';
 
 const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
   const [messages, setMessages] = useState([]);
@@ -58,7 +59,7 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
       formData.append('language', language);
       formData.append('scenario', scenario);
 
-      const response = await fetch('http://localhost:8000/voice_chat/', {
+      const response = await fetch(`${API_BASE_URL}/voice_chat/`, {
         method: 'POST',
         body: formData,
       });

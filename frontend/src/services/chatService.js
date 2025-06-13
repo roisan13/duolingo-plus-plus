@@ -1,6 +1,8 @@
+import { API_BASE_URL } from '../config';
+
 // Function to send a text message
-export const sendMessage = async (sessionId, conversationId, message, language, scenario) => {
-  const response = await fetch('http://localhost:8000/chat/', {
+export const sendMessage = async (message, sessionId, conversationId, language, scenario) => {
+  const response = await fetch(`${API_BASE_URL}/chat/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -10,7 +12,7 @@ export const sendMessage = async (sessionId, conversationId, message, language, 
       session_id: sessionId,
       conversation_id: conversationId,
       language,
-      scenario,
+      scenario
     }),
   });
 
@@ -23,7 +25,7 @@ export const sendMessage = async (sessionId, conversationId, message, language, 
 
 // Function to end a conversation
 export const endConversation = async (sessionId, conversationId) => {
-  const response = await fetch('http://localhost:8000/end_conversation/', {
+  const response = await fetch(`${API_BASE_URL}/end_conversation/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

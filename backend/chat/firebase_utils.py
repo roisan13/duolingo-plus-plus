@@ -5,7 +5,10 @@ import uuid
 from datetime import datetime
 
 # Path to your Firebase key
-FIREBASE_KEY_PATH = os.path.join(os.path.dirname(__file__), "../firebase_key.json")
+# FIREBASE_KEY_PATH = os.path.join(os.path.dirname(__file__), "../firebase_key.json")
+
+# for render, secret files are stored in etc/secrets/
+FIREBASE_KEY_PATH = os.path.join("/etc/secrets/firebase_key.json")
 
 # Initialize Firebase once
 if not firebase_admin._apps:

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 const VocabularyAnalysis = ({ sessionId, onBack }) => {
   const [analysis, setAnalysis] = useState(null);
@@ -14,45 +15,50 @@ const VocabularyAnalysis = ({ sessionId, onBack }) => {
     { id: 'italian', name: 'Italian' }
   ];
 
-  const fetchAnalysis = async (language) => {
-    if (!sessionId || !language) return;
+  useEffect(() => {
+    const fetchAnalysis = async (language) => {
+      if (!sessionId || !language) return;
 
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`http://localhost:8000/analyze_vocabulary?session_id=${sessionId}&language=${language}`);
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to analyze vocabulary');
-      }
-
-      let parsedRecommendations;
       try {
-        parsedRecommendations = Array.isArray(data.recommendations)
-          ? data.recommendations
-          : JSON.parse(data.recommendations);
-      } catch (parseError) {
-        throw new Error('Failed to parse vocabulary recommendations');
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch(`${API_BASE_URL}/analyze_vocabulary?session_id=${sessionId}&language=${language}`);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to analyze vocabulary');
+        }
+
+        let parsedRecommendations;
+        try {
+          parsedRecommendations = Array.isArray(data.recommendations)
+            ? data.recommendations
+            : JSON.parse(data.recommendations);
+        } catch (parseError) {
+          throw new Error('Failed to parse vocabulary recommendations');
+        }
+
+        const parsedData = {
+          ...data,
+          recommendations: parsedRecommendations
+        };
+
+        setAnalysis(parsedData);
+      } catch (err) {
+        setError(err.message || 'Failed to analyze vocabulary');
+        setAnalysis(null);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const parsedData = {
-        ...data,
-        recommendations: parsedRecommendations
-      };
-
-      setAnalysis(parsedData);
-    } catch (err) {
-      setError(err.message || 'Failed to analyze vocabulary');
-      setAnalysis(null);
-    } finally {
-      setLoading(false);
+    if (sessionId && selectedLanguage) {
+      fetchAnalysis(selectedLanguage);
     }
-  };
+  }, [sessionId, selectedLanguage]);
 
   const handleLanguageSelect = (language) => {
     setSelectedLanguage(language);
-    fetchAnalysis(language);
   };
 
   // Back button handler for language selection screen
