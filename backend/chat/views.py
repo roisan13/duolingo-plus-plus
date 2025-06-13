@@ -26,12 +26,14 @@ vocab_analyzer = VocabularyAnalyzer()
 chat_sessions = defaultdict(lambda: defaultdict(list))
 
 
+@csrf_exempt
 @api_view(['POST'])
 def initialize_session(request):
     """Create a new session and return its ID"""
     session_id = create_session()
     return Response({"session_id": session_id})
 
+@csrf_exempt
 @api_view(['POST'])
 def start_conversation(request):
     """Start a new conversation within a session"""
@@ -45,6 +47,7 @@ def start_conversation(request):
         "conversation_id": conversation_id
     })
 
+@csrf_exempt
 @api_view(['POST'])
 def chat_with_ai(request):
     user_msg = request.data.get("message", "")
@@ -106,6 +109,7 @@ def chat_with_ai(request):
         return Response({"error": str(e)}, status=500)
 
 
+@csrf_exempt
 @api_view(['POST'])
 def end_conversation(request):
     session_id = request.data.get("session_id")
@@ -155,6 +159,7 @@ def end_conversation(request):
         return Response({"error": str(e)}, status=500)
 
 
+@csrf_exempt
 @api_view(['POST'])
 @parser_classes([MultiPartParser])
 def voice_chat(request):
@@ -246,6 +251,7 @@ def voice_chat(request):
         return Response({"error": str(e)}, status=500)
 
 
+@csrf_exempt
 @api_view(['GET'])
 def analyze_vocabulary(request):
     """Analyze vocabulary from a session and provide recommendations"""
