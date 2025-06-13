@@ -1,6 +1,7 @@
 from rest_framework.parsers import MultiPartParser
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.response import Response
+from django.views.decorators.csrf import csrf_exempt
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
