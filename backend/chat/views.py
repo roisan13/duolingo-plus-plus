@@ -6,8 +6,7 @@ import os
 from dotenv import load_dotenv
 from collections import defaultdict
 from .firebase_utils import save_conversation, create_session, create_conversation, get_session_messages, end_conversation as mark_conversation_ended
-from .firebase_utils import db
-from .ml_utils import VocabularyAnalyzer
+from .firebase_utils import db  
 from elevenlabs.client import ElevenLabs
 import uuid
 from .vocabulary_analyzer import VocabularyAnalyzer
