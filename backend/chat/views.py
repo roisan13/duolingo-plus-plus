@@ -22,7 +22,7 @@ eleven_labs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 vocab_analyzer = VocabularyAnalyzer()
 
 
-# TEMPORARY in-memory store: { session_id: { conversation_id: [message_dicts] } }
+# In memory store for chat sessions, faster lookup (i think)
 chat_sessions = defaultdict(lambda: defaultdict(list))
 
 
@@ -73,7 +73,7 @@ def chat_with_ai(request):
     if not chat_sessions[session_id][conversation_id]:
         chat_sessions[session_id][conversation_id].append({"role": "system", "content": system_prompt})
 
-    # Add user's message to conversation history
+    # Add user message to in memory converastion
     chat_sessions[session_id][conversation_id].append({"role": "user", "content": user_msg})
 
     try:
@@ -83,11 +83,7 @@ def chat_with_ai(request):
         )
 
         raw_reply = response.choices[0].message.content
-
-        # Save assistant reply to history
         chat_sessions[session_id][conversation_id].append({"role": "assistant", "content": raw_reply})
-
-        # Save to Firestore
         save_conversation(session_id, conversation_id, language, scenario, chat_sessions[session_id][conversation_id])
 
         # Parse reply + feedback
@@ -121,31 +117,16 @@ def end_conversation(request):
     if session_id not in chat_sessions or conversation_id not in chat_sessions[session_id]:
         return Response({"error": "Invalid session_id or conversation_id"}, status=400)
 
-    # Get full message history
+    # Full messages history
     messages = chat_sessions[session_id][conversation_id]
 
-    # Enhanced prompt for final feedback
+    # this could use a little bit of fine-tuning maybe, although it's working fine now
     final_prompt = (
-        "Now that the conversation is over, provide a comprehensive analysis of the learner's language use. "
-        "Structure your feedback in the following sections:\n\n"
-        "1. Overall Progress:\n"
-        "- General assessment of the conversation\n"
-        "- Key strengths demonstrated\n"
-        "- Areas that need improvement\n\n"
-        "2. Grammar and Structure:\n"
-        "- Common grammar mistakes\n"
-        "- Sentence structure issues\n"
-        "- Suggestions for improvement\n\n"
-        "3. Vocabulary and Expression:\n"
-        "- Vocabulary usage and variety\n"
-        "- Natural expression and idiomatic usage\n"
-        "- Words/phrases that could be used instead\n\n"
-        "4. Pronunciation (if applicable):\n"
-        "- Notable pronunciation patterns\n"
-        "- Specific sounds or words to practice\n\n"
-        "5. Action Items:\n"
-        "- 3 specific things to practice\n"
-        "- Recommended next steps\n\n"
+        "Now that the conversation is over, provide a comprehensive analysis of the learner's language use. English only."
+        "Talk about the learner's general assessment of the conversation, Key strenghts demonstrated."
+        "Talk about Grammar and his structure, common grammar mistakes and sentence structure issues."
+        "Talk about the vocabulary usage and variety, phrases that could be used isntread for natural expression."
+        "Add a phrase at the end exactly like this: << Use our vocabulary analyzer and other tools in our app to improve your language"
         "Keep the feedback constructive and encouraging. Format it in clear paragraphs."
     )
 
@@ -202,6 +183,7 @@ def voice_chat(request):
                 "- Any grammar/spelling issues\n"
                 "- Better/more natural phrasing\n"
                 "- Vocabulary tips\n"
+                "Feedback should be given in English and should be complete, but also concise. Skip the good job or encouraging words."
                 "Use this structure:\n"
                 "REPLY: <your in-character response>\n"
                 "FEEDBACK: <corrections and tips>"

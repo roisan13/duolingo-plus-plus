@@ -17,7 +17,11 @@ class VocabularyAnalyzer:
         pass
         
     def analyze_vocabulary(self, messages: List[Dict], language: str) -> Dict:
-        """Analyze vocabulary and get recommendations from ChatGPT"""
+
+        # this is the main function that will be called by the view
+        # it will extract words from the messages and get recommendations from ChatGPT
+        # return sa dictionary with the top words and recommendations
+
         # Extract words
         words = self._extract_words(messages)
         # print("Extracted words:", words)  # deebug print
@@ -40,18 +44,17 @@ class VocabularyAnalyzer:
         for msg in messages:
             # Only process user messages
             if msg.get('role') == 'user':
-                print("Processing user message:", msg.get('content'))  # Debug print
+                print("Processing user message:", msg.get('content'))  #  Just a debug print
                 # Get the content and mreove any feedback
                 content = msg.get('content', '').lower()
                 content = content.split('FEEDBACK:')[0].strip()
                 # print("Content after spliting:", content)  # Debug print
                 
-                # Split into words and filter
+                # Split into wo
                 message_words = [word.strip('.,!?()[]{}":;') for word in content.split()]
-                # Filter out short words and common words
                 filtered_words = [word for word in message_words if len(word) > 2]
                 words.extend(filtered_words)
-                # print(f"Added words: {filtered_words}")  # Debug print
+                # print(f"Added words: {filtered_words}")  # debug
         
         print("Final word list:", words)  # Debug print
         return words
