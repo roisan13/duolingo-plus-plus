@@ -17,6 +17,9 @@ function App() {
       // Initialize session
       const res = await fetch(`${API_BASE_URL}/initialize_session/`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
       const data = await res.json();
       setSessionId(data.session_id);

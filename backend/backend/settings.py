@@ -132,7 +132,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True # for dev only
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_CREDENTIALS = [
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
     'authorization',
