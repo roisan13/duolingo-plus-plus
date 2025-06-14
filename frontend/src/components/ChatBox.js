@@ -5,7 +5,7 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('chat');
+  const [chatEnded, setChatEnded] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -18,7 +18,7 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || chatEnded) return;
 
     const userMessage = {
       role: 'user',
@@ -33,15 +33,13 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
     try {
       const response = await sendMessage(sessionId, conversationId, input, language, scenario);
 
-      // Add AI's reply
       const assistantMessage = {
         role: 'assistant',
-        content: response.reply,
+        content: response.reply || "Sorry, I didn’t catch that. Can you try again?",
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Add feedback if available
       if (response.feedback) {
         const feedbackMessage = {
           role: 'system',
@@ -64,6 +62,8 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
   };
 
   const handleEndConversation = async () => {
+    if (chatEnded) return;
+
     try {
       const response = await endConversation(sessionId, conversationId);
       const endMessage = {
@@ -74,6 +74,8 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
       setMessages(prev => [...prev, endMessage]);
     } catch (error) {
       console.error('Error ending conversation:', error);
+    } finally {
+      setChatEnded(true);
     }
   };
 
@@ -86,9 +88,6 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
       borderRadius: '8px',
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
     }}>
-      
-      
-      {/* Messages Area */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
@@ -106,7 +105,7 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
               padding: '0.75rem 1rem',
               borderRadius: '1rem',
               backgroundColor: message.role === 'user' ? '#007bff' :
-                             message.role === 'system' ? '#f8f9fa' : '#e9ecef',
+                message.role === 'system' ? '#f8f9fa' : '#e9ecef',
               color: message.role === 'user' ? 'white' : 'black',
               boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
               border: message.role === 'system' ? '1px solid #dee2e6' : 'none'
@@ -119,26 +118,23 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
         {isLoading && (
           <div
             style={{
-            alignSelf: 'flex-start',
-            maxWidth: '70%',
-            padding: '0.75rem 1rem',
-            borderRadius: '1rem',
-            backgroundColor: '#e9ecef',
-            color: 'gray',
-            fontStyle: 'italic',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-          }}
+              alignSelf: 'flex-start',
+              maxWidth: '70%',
+              padding: '0.75rem 1rem',
+              borderRadius: '1rem',
+              backgroundColor: '#e9ecef',
+              color: 'gray',
+              fontStyle: 'italic',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            }}
           >
             Thinking...
           </div>
-          )}
-
-
+        )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
       <form onSubmit={handleSubmit} style={{
         padding: '1rem',
         borderTop: '1px solid #dee2e6',
@@ -150,7 +146,7 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
-          disabled={isLoading}
+          disabled={isLoading || chatEnded}
           style={{
             flex: 1,
             padding: '0.75rem',
@@ -161,14 +157,14 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
         />
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || chatEnded}
           style={{
             padding: '0.75rem 1.5rem',
             backgroundColor: '#007bff',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer',
+            cursor: chatEnded ? 'not-allowed' : 'pointer',
             fontSize: '1rem'
           }}
         >
@@ -177,17 +173,18 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
         <button
           type="button"
           onClick={handleEndConversation}
+          disabled={chatEnded}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: '#dc3545',
+            backgroundColor: chatEnded ? '#6c757d' : '#dc3545',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer',
+            cursor: chatEnded ? 'not-allowed' : 'pointer',
             fontSize: '1rem'
           }}
         >
-          End Chat
+          {chatEnded ? 'Chat Ended' : 'End Chat'}
         </button>
       </form>
     </div>
