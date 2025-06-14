@@ -6,12 +6,13 @@ import os
 from dotenv import load_dotenv
 from collections import defaultdict
 from .firebase_utils import save_conversation, create_session, create_conversation, get_session_messages, end_conversation as mark_conversation_ended
-from .firebase_utils import db  
+from .firebase_utils import db
 from elevenlabs.client import ElevenLabs
 import uuid
 from .vocabulary_analyzer import VocabularyAnalyzer
-
-
+import requests
+from urllib.parse import unquote
+import json
 
 
 
@@ -270,3 +271,76 @@ def analyze_vocabulary(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser])
+def analyze_pronunciation(request):
+    audio_file = request.FILES.get('audio')
+    expected_text = request.data.get('text')  # FIXED
+    user_id = request.data.get('user_id', 'default_user')
+    dialect = request.data.get('dialect', 'en-us')
+
+    if not audio_file or not expected_text:
+        return Response({"error": "Missing audio or text"}, status=400)
+
+    print(dialect)
+    try:
+        response = requests.post(
+            "https://api4.speechace.com/api/scoring/text/v9/json",
+            params={
+                "key": os.getenv("SPEECHACE_API_KEY"),
+                "dialect": dialect 
+            },
+            files={"user_audio_file": audio_file},
+            data={
+                "text": expected_text,
+                "user_id": user_id
+            }
+        )
+
+        result = response.json()
+
+
+        if result.get("status") != "success" or "text_score" not in result:
+            return Response({"error": "Speechace returned an error", "detail": result}, status=400)
+
+        # Word-level feedback
+        word_feedback = []
+        for word_data in result["text_score"].get("word_score_list", []):
+            word = word_data["word"]
+            word_score = word_data.get("quality_score", 0)
+            phoneme_info = []
+
+            for phoneme in word_data.get("phone_score_list", []):
+                phoneme_info.append({
+                    "symbol": phoneme["phone"],
+                    "score": phoneme.get("quality_score", 0),
+                    "hint": phoneme.get("sound_most_like", "Unclear")
+                })
+
+            word_feedback.append({
+                "word": word,
+                "score": word_score,
+                "phonemes": phoneme_info
+            })
+
+        return Response({
+            "overall_score": result["text_score"]["speechace_score"]["pronunciation"],
+            "words": word_feedback,
+        })
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+'''
+TO DO
+
+Feedback corect fara prostii
+
+La fel pt spaniola si franceza
+
+UI Fixed
+
+
+'''

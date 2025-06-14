@@ -1,32 +1,31 @@
+// === App.js ===
 import React, { useState, useEffect } from 'react';
 import MainMenu from './components/MainMenu';
 import ChatInterface from './components/ChatInterface';
 import VocabularyAnalysis from './components/VocabularyAnalysis';
 import ConversationSetup from './components/ConversationSetup';
+import LanguageSelector from './components/LanguageSelector';
+import PronunciationFeedback from './components/PronunciationFeedback';
 
 function App() {
   const [currentView, setCurrentView] = useState('main');
   const [sessionData, setSessionData] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [conversationId, setConversationId] = useState(null);
+  const [pronunciationLang, setPronunciationLang] = useState(null);
 
   const initializeSession = async () => {
     try {
       const res = await fetch('http://localhost:8000/initialize_session/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
       const data = await res.json();
       setSessionId(data.session_id);
-      
-      // Start a new conversation
+
       const convRes = await fetch('http://localhost:8000/start_conversation/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: data.session_id }),
       });
       const convData = await convRes.json();
@@ -39,7 +38,6 @@ function App() {
 
   const handleNavigate = async (view, data = {}) => {
     if (view === 'conversation') {
-      // Initialize session when starting a conversation
       await initializeSession();
       setSessionData(data);
     }
@@ -52,10 +50,7 @@ function App() {
         return <MainMenu onNavigate={handleNavigate} />;
       case 'conversation_setup':
         return (
-          <ConversationSetup
-            onNavigate={handleNavigate}
-            onBack={() => handleNavigate('main')}
-          />
+          <ConversationSetup onNavigate={handleNavigate} onBack={() => handleNavigate('main')} />
         );
       case 'conversation':
         return (
@@ -69,10 +64,24 @@ function App() {
           />
         );
       case 'vocabulary':
+        return <VocabularyAnalysis sessionId={sessionId} onBack={() => handleNavigate('main')} />;
+      case 'pronunciation_selector':
         return (
-          <VocabularyAnalysis
-            sessionId={sessionId}
-            onBack={() => handleNavigate('main')}
+          <LanguageSelector
+            onSelect={(lang) => {
+              setPronunciationLang(lang);
+              setCurrentView('pronunciation_feedback');
+            }}
+            onBack={() => setCurrentView('main')}
+          />
+        );
+      case 'pronunciation_feedback':
+        return (
+          <PronunciationFeedback
+            language={pronunciationLang}
+            sessionId={sessionId || 'frontend-session'}
+            conversationId={conversationId || 'frontend-convo'}
+            onBack={() => setCurrentView('main')}
           />
         );
       default:
@@ -80,12 +89,7 @@ function App() {
     }
   };
 
-  return (
-    <div className="App">
-      {renderView()}
-    </div>
-  );
+  return <div className="App">{renderView()}</div>;
 }
 
 export default App;
-

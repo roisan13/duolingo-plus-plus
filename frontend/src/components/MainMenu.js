@@ -28,40 +28,39 @@ const MainMenu = ({ onNavigate }) => {
       }}>
         <button
           onClick={() => onNavigate('conversation_setup')}
-          style={{
-            padding: '1.5rem 2rem',
-            fontSize: '1.2rem',
-            backgroundColor: '#3498db',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            transition: 'transform 0.2s, background-color 0.2s',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-          }}
+          style={buttonStyle('#3498db')}
         >
           Conversation Practice
         </button>
 
         <button
           onClick={() => onNavigate('vocabulary')}
-          style={{
-            padding: '1.5rem 2rem',
-            fontSize: '1.2rem',
-            backgroundColor: '#2ecc71',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            transition: 'transform 0.2s, background-color 0.2s',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-          }}
+          style={buttonStyle('#2ecc71')}
         >
           Vocabulary Analyzer
+        </button>
+
+        <button
+          onClick={() => onNavigate('pronunciation_selector')}
+          style={buttonStyle('#9b59b6')}
+        >
+          Pronunciation Practice
         </button>
       </div>
     </div>
   );
 };
 
-export default MainMenu; 
+const buttonStyle = (backgroundColor) => ({
+  padding: '1.5rem 2rem',
+  fontSize: '1.2rem',
+  backgroundColor,
+  color: 'white',
+  border: 'none',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  transition: 'transform 0.2s, background-color 0.2s',
+  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+});
+
+export default MainMenu;
