@@ -13,12 +13,12 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const initializeChat = async () => {
+  // Initialize session only once when app loads
+  const initializeSession = async () => {
     try {
       setError(null);
       console.log('Initializing session with API:', API_BASE_URL);
       
-      // Initialize session
       const res = await fetch(`${API_BASE_URL}/initialize_session/`, {
         method: 'POST',
         headers: {
@@ -36,15 +36,29 @@ function App() {
       const data = await res.json();
       console.log('Session initialized:', data);
       setSessionId(data.session_id);
+      return true;
+    } catch (error) {
+      console.error('Error initializing session:', error);
+      setError(error.message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      // Start conversation
+  // Start a new conversation
+  const startConversation = async () => {
+    try {
+      setError(null);
+      console.log('Starting new conversation with session:', sessionId);
+      
       const convRes = await fetch(`${API_BASE_URL}/start_conversation/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ session_id: data.session_id }),
+        body: JSON.stringify({ session_id: sessionId }),
         mode: 'cors',
         credentials: 'include'
       });
@@ -56,25 +70,32 @@ function App() {
       const convData = await convRes.json();
       console.log('Conversation started:', convData);
       setConversationId(convData.conversation_id);
+      return true;
     } catch (error) {
-      console.error('Error initializing chat:', error);
+      console.error('Error starting conversation:', error);
       setError(error.message);
-    } finally {
-      setIsLoading(false);
+      return false;
     }
   };
 
+  // Initialize session when app loads
   useEffect(() => {
-    initializeChat();
+    initializeSession();
   }, []);
 
   const handleNavigate = async (view, data = {}) => {
     if (view === 'conversation') {
-      // Initialize session when starting a conversation
-      await initializeChat();
-      setSessionData(data);
+      setIsLoading(true);
+      // Start a new conversation when user clicks the button
+      const success = await startConversation();
+      if (success) {
+        setSessionData(data);
+        setCurrentView(view);
+      }
+      setIsLoading(false);
+    } else {
+      setCurrentView(view);
     }
-    setCurrentView(view);
   };
 
   const renderView = () => {
@@ -89,6 +110,9 @@ function App() {
           />
         );
       case 'conversation':
+        if (!sessionId || !conversationId) {
+          return <div>Loading session...</div>;
+        }
         return (
           <ChatInterface
             sessionId={sessionId}
