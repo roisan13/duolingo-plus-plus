@@ -5,6 +5,7 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState('chat');
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -85,6 +86,8 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
       borderRadius: '8px',
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
     }}>
+      
+      
       {/* Messages Area */}
       <div style={{
         flex: 1,
