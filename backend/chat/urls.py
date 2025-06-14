@@ -8,5 +8,6 @@ urlpatterns = [
     path('voice_chat/', views.voice_chat, name='voice_chat'),
     path('end_conversation/', views.end_conversation, name='end_conversation'),
     path('analyze_vocabulary/', views.analyze_vocabulary, name='analyze_vocabulary'),
+    path('analyze_pronunciation/', views.analyze_pronunciation, name='analyze_pronunciation'),
 ]
 

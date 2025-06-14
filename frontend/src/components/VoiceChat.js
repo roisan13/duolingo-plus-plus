@@ -6,6 +6,8 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
   const [messages, setMessages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [chatEnded, setChatEnded] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState({});
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const messagesEndRef = useRef(null);
@@ -18,7 +20,16 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
     scrollToBottom();
   }, [messages]);
 
+  const toggleReply = (index) => {
+    setExpandedReplies(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
   const startRecording = async () => {
+    if (chatEnded) return;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
@@ -65,22 +76,19 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
       });
 
       const data = await response.json();
-      
-      // Add user's transcribed message
+
       setMessages(prev => [...prev, {
         role: 'user',
         content: data.transcript,
         timestamp: new Date().toISOString()
       }]);
 
-      // Add AI's reply
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: data.reply,
         timestamp: new Date().toISOString()
       }]);
 
-      // Add feedback if available
       if (data.feedback) {
         setMessages(prev => [...prev, {
           role: 'system',
@@ -89,7 +97,6 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
         }]);
       }
 
-      // Play audio response if available
       if (data.audio_url) {
         const audio = new Audio(data.audio_url);
         audio.play();
@@ -108,6 +115,8 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
   };
 
   const handleEndConversation = async () => {
+    if (chatEnded) return;
+
     try {
       const response = await endConversation(sessionId, conversationId);
       setMessages(prev => [...prev, {
@@ -117,6 +126,8 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
       }]);
     } catch (error) {
       console.error('Error ending conversation:', error);
+    } finally {
+      setChatEnded(true);
     }
   };
 
@@ -146,16 +157,73 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
               maxWidth: '70%',
               padding: '0.75rem 1rem',
               borderRadius: '1rem',
-              backgroundColor: message.role === 'user' ? '#007bff' : 
-                             message.role === 'system' ? '#f8f9fa' : '#e9ecef',
+              backgroundColor: message.role === 'user' ? '#007bff' :
+                message.role === 'system' ? '#f8f9fa' : '#e9ecef',
               color: message.role === 'user' ? 'white' : 'black',
               boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
               border: message.role === 'system' ? '1px solid #dee2e6' : 'none'
             }}
           >
-            {message.content}
+            {message.role === 'assistant' ? (
+              <div>
+                {expandedReplies[index] ? (
+                  <div>
+                    {message.content}
+                    <button
+                      onClick={() => toggleReply(index)}
+                      style={{
+                        marginTop: '0.5rem',
+                        padding: '0.25rem 0.5rem',
+                        backgroundColor: 'transparent',
+                        border: '1px solid #666',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        color: '#666'
+                      }}
+                    >
+                      Hide Reply
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => toggleReply(index)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: 'transparent',
+                      border: '1px solid #666',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      color: '#666'
+                    }}
+                  >
+                    See Reply
+                  </button>
+                )}
+              </div>
+            ) : (
+              message.content
+            )}
           </div>
         ))}
+
+        {isLoading && (
+          <div
+            style={{
+              alignSelf: 'flex-start',
+              maxWidth: '70%',
+              padding: '0.75rem 1rem',
+              borderRadius: '1rem',
+              backgroundColor: '#e9ecef',
+              color: 'gray',
+              fontStyle: 'italic',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            }}
+          >
+            Thinking...
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -169,35 +237,33 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
       }}>
         <button
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={isLoading}
+          disabled={isLoading || chatEnded}
           style={{
             padding: '0.75rem 1.5rem',
             backgroundColor: isRecording ? '#dc3545' : '#28a745',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
+            cursor: chatEnded ? 'not-allowed' : 'pointer',
+            fontSize: '1rem'
           }}
         >
           {isRecording ? 'Stop Recording' : 'Start Recording'}
         </button>
         <button
           onClick={handleEndConversation}
+          disabled={chatEnded}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: '#dc3545',
+            backgroundColor: chatEnded ? '#6c757d' : '#dc3545',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer',
+            cursor: chatEnded ? 'not-allowed' : 'pointer',
             fontSize: '1rem'
           }}
         >
-          End Chat
+          {chatEnded ? 'Chat Ended' : 'End Chat'}
         </button>
       </div>
     </div>
