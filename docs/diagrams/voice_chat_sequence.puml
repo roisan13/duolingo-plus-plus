@@ -1,0 +1,53 @@
+@startuml Voice Chat Sequence
+
+actor User
+participant "VoiceChat\nComponent" as VC
+participant "Backend\nChat Views" as BC
+participant "OpenAI\nWhisper API" as WA
+participant "OpenAI\nGPT API" as GA
+participant "ElevenLabs\nAPI" as EA
+participant "Firebase" as FB
+
+User -> VC: Start Recording
+activate VC
+VC -> VC: Initialize MediaRecorder
+VC -> User: Request Microphone Access
+User -> VC: Grant Access
+VC -> VC: Start Recording
+deactivate VC
+
+User -> VC: Stop Recording
+activate VC
+VC -> VC: Stop Recording
+VC -> VC: Create Audio Blob
+VC -> BC: Send Audio + Context
+activate BC
+
+BC -> WA: Transcribe Audio
+activate WA
+WA --> BC: Return Transcript
+deactivate WA
+
+BC -> GA: Get AI Response
+activate GA
+GA --> BC: Return Response
+deactivate GA
+
+BC -> EA: Generate Speech
+activate EA
+EA --> BC: Return Audio
+deactivate EA
+
+BC -> FB: Save Conversation
+activate FB
+FB --> BC: Confirm Save
+deactivate FB
+
+BC --> VC: Return Response + Audio
+deactivate BC
+
+VC -> User: Play Audio Response
+VC -> VC: Update UI
+deactivate VC
+
+@enduml 

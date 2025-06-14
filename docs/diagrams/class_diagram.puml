@@ -1,0 +1,59 @@
+@startuml Class Diagram
+
+class ChatInterface {
+    +sessionId: string
+    +conversationId: string
+    +language: string
+    +mode: string
+    +scenario: string
+    +onBack(): void
+}
+
+class VoiceChat {
+    -messages: Message[]
+    -isRecording: boolean
+    -isLoading: boolean
+    -isEndingChat: boolean
+    -expandedReplies: object
+    +startRecording(): void
+    +stopRecording(): void
+    +handleAudioSubmission(): void
+    +handleEndConversation(): void
+}
+
+class ChatBox {
+    -messages: Message[]
+    -input: string
+    -isLoading: boolean
+    -viewMode: string
+    +handleSubmit(): void
+    +handleEndConversation(): void
+}
+
+class Message {
+    +role: string
+    +content: string
+    +timestamp: string
+}
+
+class VocabularyAnalyzer {
+    +analyze_vocabulary(): object
+    +get_recommendations(): string[]
+}
+
+class FirebaseUtils {
+    +save_conversation(): void
+    +create_session(): string
+    +create_conversation(): string
+    +get_session_messages(): Message[]
+    +end_conversation(): void
+}
+
+ChatInterface --> VoiceChat : contains
+ChatInterface --> ChatBox : contains
+VoiceChat --> Message : manages
+ChatBox --> Message : manages
+VocabularyAnalyzer --> Message : analyzes
+FirebaseUtils --> Message : stores
+
+@enduml 

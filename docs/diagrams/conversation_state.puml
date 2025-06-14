@@ -1,0 +1,40 @@
+@startuml Conversation States
+
+[*] --> MainMenu
+
+state MainMenu {
+    [*] --> ConversationSetup
+    [*] --> VocabularyAnalysis
+    [*] --> PronunciationPractice
+}
+
+state ConversationSetup {
+    [*] --> LanguageSelection
+    LanguageSelection --> ScenarioSelection
+    ScenarioSelection --> ModeSelection
+    ModeSelection --> Conversation
+}
+
+state Conversation {
+    [*] --> Initializing
+    Initializing --> Active
+    Active --> Processing
+    Processing --> Active
+    Active --> Ending
+    Ending --> [*]
+}
+
+state VocabularyAnalysis {
+    [*] --> Analyzing
+    Analyzing --> Results
+    Results --> [*]
+}
+
+state PronunciationPractice {
+    [*] --> Recording
+    Recording --> Analyzing
+    Analyzing --> Feedback
+    Feedback --> [*]
+}
+
+@enduml 

@@ -1,0 +1,40 @@
+@startuml Component Diagram
+
+package "Frontend" {
+    component [MainMenu] as MM
+    component [ChatInterface] as CI
+    component [VoiceChat] as VC
+    component [ChatBox] as CB
+    component [VocabularyAnalysis] as VA
+    component [PronunciationFeedback] as PF
+    component [ConversationSetup] as CS
+}
+
+package "Backend" {
+    component [Chat Views] as CV
+    component [Firebase Utils] as FU
+    component [Vocabulary Analyzer] as VA
+}
+
+package "External Services" {
+    component [OpenAI API] as OA
+    component [ElevenLabs API] as EA
+    component [Firebase] as FB
+    component [Speechace API] as SA
+}
+
+MM --> CI : navigates to
+CI --> VC : renders
+CI --> CB : renders
+MM --> VA : navigates to
+MM --> PF : navigates to
+MM --> CS : navigates to
+
+CV --> OA : uses
+CV --> EA : uses
+CV --> FB : uses
+CV --> SA : uses
+CV --> FU : uses
+CV --> VA : uses
+
+@enduml 
