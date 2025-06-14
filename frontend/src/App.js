@@ -11,30 +11,54 @@ function App() {
   const [sessionId, setSessionId] = useState(null);
   const [conversationId, setConversationId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const initializeChat = async () => {
     try {
+      setError(null);
+      console.log('Initializing session with API:', API_BASE_URL);
+      
       // Initialize session
       const res = await fetch(`${API_BASE_URL}/initialize_session/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+          'Accept': 'application/json',
+        },
+        mode: 'cors',
+        credentials: 'include'
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
+      console.log('Session initialized:', data);
       setSessionId(data.session_id);
 
+      // Start conversation
       const convRes = await fetch(`${API_BASE_URL}/start_conversation/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({ session_id: data.session_id }),
+        mode: 'cors',
+        credentials: 'include'
       });
+
+      if (!convRes.ok) {
+        throw new Error(`HTTP error! status: ${convRes.status}`);
+      }
+
       const convData = await convRes.json();
+      console.log('Conversation started:', convData);
       setConversationId(convData.conversation_id);
     } catch (error) {
       console.error('Error initializing chat:', error);
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -89,6 +113,16 @@ function App() {
 
   if (isLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <h2>Error</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>Retry</button>
+      </div>
+    );
   }
 
   return (
