@@ -9,10 +9,11 @@ Această aplicație web folosește în mod inteligent LLM-urile pentru a îmbun�
 
 
 ## Accesibil pe:
+
 <https://duolingo-plus-plus.onrender.com/>
 Cu mentiunea ca server-ul isi da spin-down de la inactivitate, posibil sa dureze pana la un minut pana se incarca. De asemenea, tot ce tine de audio nu merge din cauza server-ului de deploy. (bugetul a mers pe token-uri la OpenAI, pe Render am ramas cu Free Usage Tier...)
-
-## Tehnologii posibile:
+---
+## Tehnologii:
 
 ### Frontend:
 - **React.js** - pentru construirea interfeței interactive a utilizatorului.
@@ -27,7 +28,7 @@ Cu mentiunea ca server-ul isi da spin-down de la inactivitate, posibil sa dureze
 ### Database:
 - **Firebase Firestore** - pentru stocarea datelor utilizatorului, inclusiv vocabularul învățat.
 
-
+---
 ## Backlog
 ### 0. **Stabilirea tehnologiilor, familiarizarea cu acestea**:
 - [X] **Cercetare** în privința tehnologiilor care se potrivesc cel mai bine proiectului si satisfac cerințele
@@ -71,9 +72,10 @@ Cu mentiunea ca server-ul isi da spin-down de la inactivitate, posibil sa dureze
 ### 7. **Testare & Feedback utilizator**:
 - [X] **Testare automată** din server-side (posibil si Github).
 - [X] **Testare beta** cu un grup selectat de utilizatori (colegi, prieteni).
-
+---
 ## Demo offline
 [Duolingo-Plus-Plus demo](https://youtu.be/wJ8b0s0LWTc)
+---
 
 ## User stories
 1. Ca utilizator, vreau să folosesc o aplicație cât mai ușoară, eficientă și rapidă pentru a practica limba pe care o învăț.
@@ -96,6 +98,7 @@ Cu mentiunea ca server-ul isi da spin-down de la inactivitate, posibil sa dureze
 
 10. Ca utilizator, vreau să pot urmări progresul meu în învățarea limbii, astfel încât să știu ce cuvinte și concepte am învățat și ce trebuie să mai exersez.
 
+---
 
 ## Diagrame 
 
@@ -103,6 +106,8 @@ Cu mentiunea ca server-ul isi da spin-down de la inactivitate, posibil sa dureze
 ![Component Diagram](docs/diagrams/ComponentDiagram.png)
 ![Conversation States Diagram](docs/diagrams/ConversationStates.png)
 ![Voice Chat Sequnce Diagram](docs/diagrams/VoiceChatSequence.png)
+
+---
 
 
 ## Prompt engineering
