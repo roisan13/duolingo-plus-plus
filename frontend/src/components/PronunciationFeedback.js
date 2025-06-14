@@ -57,8 +57,8 @@ const PronunciationFeedback = ({ onBack, sessionId, conversationId, language }) 
       formData.append('language', language);
       formData.append('user_id', 'frontend-user');
 
-      if (language == 'Spanish') formData.append('dialect', 'es-es');
-      else if (language == 'French') formData.append('dialect', 'fr-fr');
+      if (language === 'Spanish') formData.append('dialect', 'es-es');
+      else if (language === 'French') formData.append('dialect', 'fr-fr');
 
       const response = await fetch('http://localhost:8000/analyze_pronunciation/', {
         method: 'POST',

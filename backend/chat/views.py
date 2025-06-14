@@ -276,25 +276,25 @@ def analyze_vocabulary(request):
 @parser_classes([MultiPartParser])
 def analyze_pronunciation(request):
     audio_file = request.FILES.get('audio')
-    expected_text = request.data.get('text')  # FIXED
+    expected_text = request.data.get('text')
     user_id = request.data.get('user_id', 'default_user')
     dialect = request.data.get('dialect', 'en-us')
 
     if not audio_file or not expected_text:
         return Response({"error": "Missing audio or text"}, status=400)
 
-    print(dialect)
     try:
         response = requests.post(
             "https://api4.speechace.com/api/scoring/text/v9/json",
             params={
                 "key": os.getenv("SPEECHACE_API_KEY"),
-                "dialect": dialect 
+                
             },
             files={"user_audio_file": audio_file},
             data={
                 "text": expected_text,
-                "user_id": user_id
+                "user_id": user_id,
+                "dialect": dialect 
             }
         )
 
@@ -331,16 +331,3 @@ def analyze_pronunciation(request):
 
     except Exception as e:
         return Response({"error": str(e)}, status=500)
-
-
-'''
-TO DO
-
-Feedback corect fara prostii
-
-La fel pt spaniola si franceza
-
-UI Fixed
-
-
-'''
