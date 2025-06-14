@@ -288,13 +288,12 @@ def analyze_pronunciation(request):
             "https://api4.speechace.com/api/scoring/text/v9/json",
             params={
                 "key": os.getenv("SPEECHACE_API_KEY"),
-                
+                "dialect": dialect
             },
             files={"user_audio_file": audio_file},
             data={
                 "text": expected_text,
-                "user_id": user_id,
-                "dialect": dialect 
+                "user_id": user_id, 
             }
         )
 
