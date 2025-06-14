@@ -3,6 +3,8 @@ import MainMenu from './components/MainMenu';
 import ChatInterface from './components/ChatInterface';
 import VocabularyAnalysis from './components/VocabularyAnalysis';
 import ConversationSetup from './components/ConversationSetup';
+import LanguageSelector from './components/LanguageSelector';
+import PronunciationFeedback from './components/PronunciationFeedback';
 import { API_BASE_URL } from './config';
 
 function App() {
@@ -12,6 +14,7 @@ function App() {
   const [conversationId, setConversationId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pronunciationLang, setPronunciationLang] = useState(null);
   const initialized = useRef(false);
 
   // Initialize session only once when app loads
