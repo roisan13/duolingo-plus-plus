@@ -73,11 +73,26 @@ class VocabularyAnalyzer:
         - A simple example sentence for each of the synonyms
         Format the response as a JSON array of objects with these fields:
         - word: the original word
-        - synonyms: array of synonyms
+        - synonyms: array of strings (not objects)
         - description: English description
         - example: example sentence
         Keep descriptions and examples simple and clear.
-        IMPORTANT: Return ONLY the JSON array, no markdown formatting or code block markers."""
+        IMPORTANT: 
+        1. Return ONLY the JSON array, no markdown formatting or code block markers.
+        2. Ensure proper spacing between words in descriptions and examples.
+        3. Format the JSON with proper indentation and line breaks for readability.
+        4. Each synonym should be a string in the synonyms array, not an object.
+        5. Descriptions and examples should be complete sentences with proper punctuation.
+        
+        Example format:
+        [
+          {{
+            "word": "example",
+            "synonyms": ["sample", "instance", "illustration"],
+            "description": "A clear explanation of the word's meaning.",
+            "example": "Here is an example sentence using the word."
+          }}
+        ]"""
         
         try:
             response = client.chat.completions.create(

@@ -16,7 +16,7 @@ const MainMenu = ({ onNavigate }) => {
         marginBottom: '3rem',
         color: '#2c3e50'
       }}>
-        Language Learning Assistant
+        Duo-Plus-Plus
       </h1>
       
       <div style={{
