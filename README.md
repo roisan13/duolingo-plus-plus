@@ -72,7 +72,6 @@ Cu mentiunea ca server-ul isi da spin-down de la inactivitate, posibil sa dureze
 - [X] **Testare automată** din server-side (posibil si Github).
 - [X] **Testare beta** cu un grup selectat de utilizatori (colegi, prieteni).
 
----
 ## Demo offline
 [Duolingo-Plus-Plus demo](https://youtu.be/wJ8b0s0LWTc)
 
