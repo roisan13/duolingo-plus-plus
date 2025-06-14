@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    environment: testing_env
     strategy:
       max-parallel: 4
       matrix:
@@ -32,7 +33,7 @@ jobs:
     - name: Create Firebase credentials file
       working-directory: backend
       run: |
-        echo ${{ secrets.FIREBASE_CREDENTIALS }} > firebase_key.json
+        echo '${{ secrets.FIREBASE_CREDENTIALS }}' > firebase_key.json
 
     
     - name: Run Tests
