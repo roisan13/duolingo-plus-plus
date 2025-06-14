@@ -30,7 +30,7 @@ const ChatBox = ({ sessionId, conversationId, language, scenario }) => {
     setIsLoading(true);
 
     try {
-      const response = await sendMessage(sessionId, conversationId, input, language, scenario);
+      const response = await sendMessage(input, sessionId, conversationId, language, scenario);
 
       // Add AI's reply
       const assistantMessage = {

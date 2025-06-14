@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MainMenu from './components/MainMenu';
 import ChatInterface from './components/ChatInterface';
 import VocabularyAnalysis from './components/VocabularyAnalysis';
@@ -12,12 +12,15 @@ function App() {
   const [conversationId, setConversationId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const initialized = useRef(false);
 
   // Initialize session only once when app loads
   const initializeSession = async () => {
+    if (initialized.current) return true;
+    
     try {
       setError(null);
-      console.log('Initializing session with API:', API_BASE_URL);
+      // console.log('Initializing session with API:', API_BASE_URL);
       
       const res = await fetch(`${API_BASE_URL}/initialize_session/`, {
         method: 'POST',
@@ -34,8 +37,9 @@ function App() {
       }
       
       const data = await res.json();
-      console.log('Session initialized:', data);
+      // console.log('Session initialized:', data);
       setSessionId(data.session_id);
+      initialized.current = true;
       return true;
     } catch (error) {
       console.error('Error initializing session:', error);
@@ -50,7 +54,7 @@ function App() {
   const startConversation = async () => {
     try {
       setError(null);
-      console.log('Starting new conversation with session:', sessionId);
+      // console.log('Starting new conversation with session:', sessionId);
       
       const convRes = await fetch(`${API_BASE_URL}/start_conversation/`, {
         method: 'POST',
