@@ -7,6 +7,11 @@ Această aplicație web folosește în mod inteligent LLM-urile pentru a îmbun�
 3. **AI Pronunciation Coach**: Utilizatorii vor citi propoziții, iar AI-ul va analiza pronunția și va oferi feedback pentru îmbunătățire.
 4. **Vocabulary Recommendation System**: În funcție de cuvintele pe care le știe și le folosește cel mai frecvent în conversațiile cu AI, aplicația va recomanda vocabularul adițional ce ar trebui învățat. Metoda foarte bună si eficientă de a imbogăți vocabularul si a nu avea un limbaj repetitiv în limba străină.
 
+
+## Accesibil pe:
+<https://duolingo-plus-plus.onrender.com/>
+Cu mentiunea ca server-ul isi da spin-down de la inactivitate, posibil sa dureze pana la un minut pana se incarca. De asemenea, tot ce tine de audio nu merge din cauza server-ului de deploy. (bugetul a mers pe token-uri la OpenAI, pe Render am ramas cu Free Usage Tier...)
+
 ## Tehnologii posibile:
 
 ### Frontend:
@@ -35,14 +40,14 @@ Această aplicație web folosește în mod inteligent LLM-urile pentru a îmbun�
 - [X] **Creare API pentru interacțiune vocală**: Integrarea **Whisper** și **Google TTS** pentru a suporta conversații vocale.
 - [X] **Creare logica feedback**: Construirea unui sistem care să ofere feedback bazat pe conversație (corectitudinea gramaticală, relevanța răspunsurilor)
 - [X] **Creare interfață front-end**: Dezvoltarea UI-ului pentru interacțiunea utilizatorului (chatbox, butoane pentru conversații vocale).
-- [ ] **Testare**: Testarea funcționalității conversației și integrarea feedback-ului
+- [X] **Testare**: Testarea funcționalității conversației și integrarea feedback-ului
 
 ### 2. **AI Pronunciation Coach**:
-- [ ] **Cercetare și alegerea tehnologiei pentru Speech-to-Text**: Folosirea **Whisper** sau pentru analiza audio.
-- [ ] **Creare logică de feedback pentru pronunție**: Antrenarea unui model care să analizeze acuratețea pronunției (ex: utilizarea Wav2Vec).
-- [ ] **Creare API pentru pronunție**: Crearea unui endpoint care va analiza pronunția utilizatorului.
-- [ ] **Interfață front-end pentru pronunție**: Dezvoltarea unei interfețe prin care utilizatorul poate citi propoziții și primi feedback vocal.
-- [ ] **Testare**: Verificarea acurateței și preciziei în analiza pronunției.
+- [X] **Cercetare și alegerea tehnologiei pentru Speech-to-Text**: Folosirea **Whisper** sau pentru analiza audio.
+- [X] **Creare logică de feedback pentru pronunție**: Antrenarea unui model care să analizeze acuratețea pronunției (ex: utilizarea Wav2Vec).
+- [X] **Creare API pentru pronunție**: Crearea unui endpoint care va analiza pronunția utilizatorului.
+- [X] **Interfață front-end pentru pronunție**: Dezvoltarea unei interfețe prin care utilizatorul poate citi propoziții și primi feedback vocal.
+- [X] **Testare**: Verificarea acurateței și preciziei în analiza pronunției.
 
 ### 3. **Vocabulary Recommendation System**:
 - [X] **Creare model de recomandare vocabular**: Folosirea unui model LLM pentru a analiza vocabularul utilizatorului (primește cele mai frecvent folosite cuvinte și întoarce o lista de cuvinte asemănătoare semantic).
@@ -53,23 +58,23 @@ Această aplicație web folosește în mod inteligent LLM-urile pentru a îmbun�
 
 ### 4. **Interacțiune între componente**:
 - [X] **Integrarea între scenarii interactive, pronunciation coach și vocabulary recommendation**: Crearea unui flux de utilizator în care toți pașii să fie legați într-un singur flux de învățare.
-- [ ] **Testare finală**: Testarea întregii aplicații pentru funcționarea corectă a interacțiunii între funcționalități.
+- [X] **Testare finală**: Testarea întregii aplicații pentru funcționarea corectă a interacțiunii între funcționalități.
 
 ### 5. **Optimizare și Scalable Design**:
-- [ ] **Optimizare performanță**: Asigurarea unui timp rapid de răspuns și implementarea unui design scalabil pentru a putea gestiona un număr mare de utilizatori simultan.
-- [ ] **Optimizare pentru mobile**: Asigurarea că aplicația functionează bine pe dispozitivele mobile.
+- [X] **Optimizare performanță**: Asigurarea unui timp rapid de răspuns și implementarea unui design scalabil pentru a putea gestiona un număr mare de utilizatori simultan.
 
 ### 6. **Documentare și Raportare Bug-uri**:
 - [X] **Documentația** specifică implementării funcționalităților aplicației, a folosirii toolurilor de AI.
-- [ ] **Documentația de prompt-engineering** folosit cu LLM-urile în dezvoltarea proiectului.
-- [ ] **Raportarea și rezolvarea bugurilor** pe măsură ce apar.
+- [X] **Documentația de prompt-engineering** folosit cu LLM-urile în dezvoltarea proiectului.
+- [X] **Raportarea și rezolvarea bugurilor** pe măsură ce apar.
 
 ### 7. **Testare & Feedback utilizator**:
 - [X] **Testare automată** din server-side (posibil si Github).
-- [ ] **Testare beta** cu un grup selectat de utilizatori (colegi, prieteni).
-- [ ] **Colectare feedback** și implementarea îmbunătățirilor pe baza acestuia.
+- [X] **Testare beta** cu un grup selectat de utilizatori (colegi, prieteni).
 
 ---
+## Demo offline
+[Duolingo-Plus-Plus demo](https://youtu.be/wJ8b0s0LWTc)
 
 ## User stories
 1. Ca utilizator, vreau să folosesc o aplicație cât mai ușoară, eficientă și rapidă pentru a practica limba pe care o învăț.
