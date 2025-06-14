@@ -5,6 +5,8 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
   const [messages, setMessages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEndingChat, setIsEndingChat] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState({});
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const messagesEndRef = useRef(null);
@@ -16,6 +18,13 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const toggleReply = (index) => {
+    setExpandedReplies(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
 
   const startRecording = async () => {
     try {
@@ -107,6 +116,7 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
   };
 
   const handleEndConversation = async () => {
+    setIsEndingChat(true);
     try {
       const response = await endConversation(sessionId, conversationId);
       setMessages(prev => [...prev, {
@@ -116,6 +126,8 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
       }]);
     } catch (error) {
       console.error('Error ending conversation:', error);
+    } finally {
+      setIsEndingChat(false);
     }
   };
 
@@ -152,9 +164,66 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
               border: message.role === 'system' ? '1px solid #dee2e6' : 'none'
             }}
           >
-            {message.content}
+            {message.role === 'assistant' ? (
+              <div>
+                {expandedReplies[index] ? (
+                  <div>
+                    {message.content}
+                    <button
+                      onClick={() => toggleReply(index)}
+                      style={{
+                        marginTop: '0.5rem',
+                        padding: '0.25rem 0.5rem',
+                        backgroundColor: 'transparent',
+                        border: '1px solid #666',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        color: '#666'
+                      }}
+                    >
+                      Hide Reply
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => toggleReply(index)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: 'transparent',
+                      border: '1px solid #666',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      color: '#666'
+                    }}
+                  >
+                    See Reply
+                  </button>
+                )}
+              </div>
+            ) : (
+              message.content
+            )}
           </div>
         ))}
+
+        {isLoading && (
+          <div
+            style={{
+              alignSelf: 'flex-start',
+              maxWidth: '70%',
+              padding: '0.75rem 1rem',
+              borderRadius: '1rem',
+              backgroundColor: '#e9ecef',
+              color: 'gray',
+              fontStyle: 'italic',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            }}
+          >
+            Thinking...
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -168,7 +237,7 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
       }}>
         <button
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={isLoading}
+          disabled={isLoading || isEndingChat}
           style={{
             padding: '0.75rem 1.5rem',
             backgroundColor: isRecording ? '#dc3545' : '#28a745',
@@ -186,6 +255,7 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
         </button>
         <button
           onClick={handleEndConversation}
+          disabled={isLoading || isEndingChat}
           style={{
             padding: '0.75rem 1.5rem',
             backgroundColor: '#dc3545',
@@ -196,7 +266,7 @@ const VoiceChat = ({ sessionId, conversationId, language, scenario }) => {
             fontSize: '1rem'
           }}
         >
-          End Chat
+          {isEndingChat ? 'Ending chat...' : 'End Chat'}
         </button>
       </div>
     </div>
